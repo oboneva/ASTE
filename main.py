@@ -5,8 +5,8 @@ from modules.model import EncoderDecoder
 from dataset import ABSADataset
 import torch
 import torch.backends.cudnn as cudnn
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data.dataloader import DataLoader
+from configs import data_configs
 
 
 def main():
@@ -16,15 +16,20 @@ def main():
     cudnn.benchmark = True
 
     # 1. Prepare the Data.
-    train = ABSADataset(path="./data/penga/14lap/train_convert.json")
-    val = ABSADataset(path="./data/penga/14lap/dev_convert.json")
-    test = ABSADataset(path="./data/penga/14lap/test_convert.json")
+    train = ABSADataset(
+        path="{}/train_convert.json".format(data_configs.data_dir))
+    val = ABSADataset(path="{}/dev_convert.json".format(data_configs.data_dir))
+    test = ABSADataset(
+        path="{}/test_convert.json".format(data_configs.data_dir))
 
     collate_fn = CollateText(batch_first=True)
 
-    train_dl = DataLoader(train, batch_size=2, collate_fn=collate_fn)
-    test_dl = DataLoader(test, collate_fn=collate_fn)
-    val_dl = DataLoader(val, collate_fn=collate_fn)
+    train_dl = DataLoader(
+        train, batch_size=data_configs.train_batch_size, collate_fn=collate_fn, drop_last=True)
+    test_dl = DataLoader(
+        test, batch_size=data_configs.test_batch_size, collate_fn=collate_fn, drop_last=True)
+    val_dl = DataLoader(
+        val, batch_size=data_configs.val_batch_size, collate_fn=collate_fn, drop_last=True)
 
     class_tokens = train.mapping2id.values()
 
