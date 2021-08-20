@@ -8,3 +8,4 @@ class data_configs:
 
 class trainer_configs:
     epochs = 100
+    patience = 15
