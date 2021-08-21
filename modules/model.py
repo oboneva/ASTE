@@ -152,7 +152,7 @@ class EncoderDecoder(nn.Module):
             values, indicies = torch.topk(decoder_logits, 1, 2)
 
             # convert index to word embedding index which will be added to the decoder_input_ids
-            last_word_indicies = indicies[:, :, -1]  # torch.Size([1, 1])
+            last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
 
             # torch.Size([1, 1])
             generated_word = torch.gather(input, 1, last_word_indicies)
@@ -169,32 +169,31 @@ class EncoderDecoder(nn.Module):
 
         return generated
 
-    # def generate_batch(self, inputs, attention_masks):
-    #     batch_size, seq_len = inputs.shape
+    def generate_batch(self, inputs, attention_masks, max_len):
+        batch_size, seq_len = inputs.shape
 
-    #     encoder_ouputs = self.encoder(
-    #         input_ids=inputs, attention_mask=attention_masks)
+        encoder_last_hidden_state = self.encode(
+            inputs, attention_masks)  # torch.Size([1, 41, 768]) TODO: maybe encode the classes here ???
 
-    #     # torch.Size([2, 41, 768])
-    #     encoder_last_hidden_state = encoder_ouputs.last_hidden_state
+        decoder_input_ids = torch.tensor(
+            [self.tokenizer.bos_token_id]).repeat(batch_size, 1)
 
-    #     decoder_input_ids = torch.tensor(
-    #         [self.tokenizer.bos_token_id]).repeat(batch_size, 1, 1)
+        for i in range(max_len):
+            decoder_logits = self.decode(
+                inputs, encoder_last_hidden_state, decoder_input_ids)  # torch.Size([1, 1, 44])
 
-    #     decoder_logits = self.decode(
-    #         inputs, encoder_last_hidden_state, decoder_input_ids)  # torch.Size([2, 1, 44])
+            values, indicies = torch.topk(decoder_logits, 1, 2)
 
-    #     # print(decoder_logits)
+            # convert index to word embedding index which will be added to the decoder_input_ids
+            last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
 
-    #     values, indicies = torch.topk(decoder_logits, 1, 2)
+            # torch.Size([1, 1])
+            generated_word = torch.gather(inputs, 1, last_word_indicies)
 
-    #     # convert index to word embedding index which will be added to the decoder_input_ids
-    #     last_word_indicies = indicies[:, :, -1]  # torch.Size([2, 1])
-    #     # last_word_indicies = last_word_indicies.squeeze()
+            decoder_input_ids = torch.cat(
+                (decoder_input_ids, generated_word), 1)
 
-    #     words = torch.gather(inputs, 1, last_word_indicies)
-
-    #     print(words)
+        return decoder_input_ids
 
 
 def test():
