@@ -8,6 +8,7 @@ import torch
 import torch.backends.cudnn as cudnn
 from torch.utils.data.dataloader import DataLoader
 from configs import data_configs
+from torch.utils.tensorboard import SummaryWriter
 
 # [0, 2, 3, 1, 50264]
 # ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
@@ -16,6 +17,8 @@ from configs import data_configs
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using {} device".format(device))
+
+    writer = SummaryWriter()
 
     cudnn.benchmark = True
 
@@ -42,17 +45,19 @@ def main():
         device=device, tokenizer=train.tokenizer, class_tokens_ids=class_tokens)
 
     # 3. Train the Model.
-    trainer = Trainer(train_dataloader=train_dl,
-                      validation_dataloader=val_dl, configs=trainer_configs)
+    trainer = Trainer(train_dataloader=train_dl, validation_dataloader=val_dl,
+                      configs=trainer_configs, writer=writer)
     trainer.train(model=model, device=device)
 
     # 4. Evaluate the Model.
 
-    precision, recall, f1 = Evaluator().eval(model, test_dl, device)
+    precision, recall, f1 = Evaluator().eval(model, test_dl, device, writer)
 
     print("precision", precision)
     print("recall", recall)
     print("f1", f1)
+
+    writer.close()
 
     # 5. Make Predictions.
 

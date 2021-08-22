@@ -10,7 +10,7 @@ class Evaluator:
         return (precision, recall, f1)
 
     @torch.no_grad()
-    def eval(self, model, dl, device):
+    def eval(self, model, dl, device, writer):
         model.eval()
 
         total_items = 0
@@ -76,7 +76,14 @@ class Evaluator:
 
         print("invalid", invalid)
 
-        return self.precision_recall_f1(true_positive, false_positive, false_negative)
+        precision, recall, f1 = self.precision_recall_f1(
+            true_positive, false_positive, false_negative)
+
+        writer.add_scalar("Test/Precision", precision)
+        writer.add_scalar("Test/Recall", recall)
+        writer.add_scalar("Test/F1-score", f1)
+
+        return (precision, recall, f1)
 
 
 def main():

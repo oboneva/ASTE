@@ -7,9 +7,10 @@ from timeit import default_timer as timer
 
 
 class Trainer:
-    def __init__(self, train_dataloader: DataLoader, validation_dataloader: DataLoader, configs):
+    def __init__(self, train_dataloader: DataLoader, validation_dataloader: DataLoader, configs, writer):
         self.train_dl = train_dataloader
         self.val_dl = validation_dataloader
+        self.writer = writer
 
         self.epochs = configs.epochs
 
@@ -121,9 +122,9 @@ class Trainer:
             print("MLoss/train", train_loss)
             print("MLoss/validation", val_loss)
 
-            # self.writer.add_scalar("MLoss/train", train_loss, epoch)
-            # self.writer.add_scalar("MLoss/validation", val_loss, epoch)
-            # self.writer.flush()
+            self.writer.add_scalar("MLoss/train", train_loss, epoch)
+            self.writer.add_scalar("MLoss/validation", val_loss, epoch)
+            self.writer.flush()
 
             model.train()
 
