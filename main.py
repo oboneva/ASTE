@@ -1,6 +1,6 @@
 from evaluator import Evaluator
 from collate import CollateText
-from configs import trainer_configs
+from configs import trainer_configs, data_configs
 from train import Trainer
 from modules.model import EncoderDecoder
 from dataset import ABSADataset
@@ -31,12 +31,11 @@ def main():
 
     collate_fn = CollateText(batch_first=True)
 
-    train_dl = DataLoader(
-        train, batch_size=data_configs.train_batch_size, collate_fn=collate_fn, drop_last=True)
+    train_dl = DataLoader(train, shuffle=True, batch_size=data_configs.train_batch_size, collate_fn=collate_fn, drop_last=True, num_workers=data_configs.num_workers)
     test_dl = DataLoader(
-        test, batch_size=data_configs.test_batch_size, collate_fn=collate_fn, drop_last=True)
+        test, shuffle=False, batch_size=data_configs.test_batch_size, collate_fn=collate_fn, drop_last=True, num_workers=data_configs.num_workers)
     val_dl = DataLoader(
-        val, batch_size=data_configs.val_batch_size, collate_fn=collate_fn, drop_last=True)
+        val, shuffle=False, batch_size=data_configs.val_batch_size, collate_fn=collate_fn, drop_last=True, num_workers=data_configs.num_workers)
 
     class_tokens = train.mapping2id.values()
 
