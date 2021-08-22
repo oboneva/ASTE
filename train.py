@@ -135,10 +135,9 @@ class Trainer:
 
                 print("New minimal validation loss", val_loss)
 
-                # path = "{}/model_best_state_dict.pt".format(
-                #     train_config.checkpoint_path)
+                path = "./checkpoints/model_best_state_dict.pt"
 
-                # torch.save(model.state_dict(), path)
+                torch.save(model.state_dict(), path)
 
             elif self.no_improvement_epochs == self.patience:
                 print("Early stopping on epoch {}".format(epoch))
