@@ -2,7 +2,9 @@ import torch
 from torch.utils.data import Dataset
 import json
 from transformers import BartTokenizer
-import numpy as np
+
+# [0, 2, 3, 1, 50264]
+# ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
 
 
 class ABSADataset(Dataset):
@@ -11,7 +13,6 @@ class ABSADataset(Dataset):
             self.data = json.load(json_file)
 
         self.tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
-        self.polarities = {"POS": 3, "NEU": 2, "NEG": 1}
 
         cur_num_tokens = self.tokenizer.vocab_size
         self.cur_num_token = cur_num_tokens
@@ -32,15 +33,12 @@ class ABSADataset(Dataset):
         self.tokenizer.add_tokens(sorted_add_tokens)
 
         self.mapping2id = {}
-        self.mapping2targetid = {}
 
         for key, value in self.mapping.items():
             tokenized = self.tokenizer.tokenize(value)
             key_id = self.tokenizer.convert_tokens_to_ids(tokenized)
-            assert len(key_id) == 1, value
-            assert key_id[0] >= cur_num_tokens
+
             self.mapping2id[key] = key_id[0]
-            self.mapping2targetid[key] = len(self.mapping2targetid)
 
     def __len__(self):
         return len(self.data)
@@ -68,13 +66,13 @@ class ABSADataset(Dataset):
                                         ["polarity"]] - self.cur_num_token + asd
 
             target.extend([aspect_s, aspect_e, opinion_s, opinion_e, polarity])
-            target2.extend(
+            target2.append(
                 [aspect_s, aspect_e, opinion_s, opinion_e, polarity2])
 
-        target.append(1)
+        target.append(2)
         target = torch.tensor(target)
 
-        target2.append(1)
+        # target2.append(2)
         target2 = torch.tensor(target2)
 
         return (input_ids, attention_mask, target, target2)

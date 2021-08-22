@@ -15,12 +15,13 @@ class CollateText:
 
         attention_masks_len = torch.LongTensor(list(map(len, attention_masks)))
         attention_masks_padded = pad_sequence(
-            attention_masks, batch_first=self.batch_first, padding_value=1)
+            attention_masks, batch_first=self.batch_first, padding_value=0)  # 0 for tokens that are masked.
 
         targets_len = torch.LongTensor(list(map(len, targets)))
         targets_padded = pad_sequence(
             targets, batch_first=self.batch_first, padding_value=1)
 
+        # TODO: we may have problems here
         targets2_len = torch.LongTensor(list(map(len, targets2)))
         targets2_padded = pad_sequence(
             targets2, batch_first=self.batch_first, padding_value=1)

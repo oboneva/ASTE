@@ -1,3 +1,4 @@
+from evaluator import Evaluator
 from collate import CollateText
 from configs import trainer_configs
 from train import Trainer
@@ -7,6 +8,9 @@ import torch
 import torch.backends.cudnn as cudnn
 from torch.utils.data.dataloader import DataLoader
 from configs import data_configs
+
+# [0, 2, 3, 1, 50264]
+# ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
 
 
 def main():
@@ -43,6 +47,12 @@ def main():
     trainer.train(model=model, device=device)
 
     # 4. Evaluate the Model.
+
+    precision, recall, f1 = Evaluator().eval(model, test_dl, device)
+
+    print("precision", precision)
+    print("recall", recall)
+    print("f1", f1)
 
     # 5. Make Predictions.
 
