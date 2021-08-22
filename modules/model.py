@@ -76,7 +76,9 @@ class EncoderDecoder(nn.Module):
 
         self.softmax = nn.LogSoftmax(dim=2)
 
-        self.to(device)
+        self.device = device
+
+        self.to(self.device)
 
     def encode(self, inputs, attention_masks):
         encoder_ouputs = self.encoder(
@@ -101,7 +103,7 @@ class EncoderDecoder(nn.Module):
             torch.mul(inputs_embed, 1 - self.a)  # torch.Size([2, 41])
 
         class_tokens_embeds = self.decoder.embed_tokens(
-            torch.tensor(list(self.class_tokens_ids)))
+            torch.tensor(list(self.class_tokens_ids), device=self.device))
 
         class_tokens_embeds = class_tokens_embeds.repeat(batch_size, 1, 1)
 
@@ -160,7 +162,9 @@ class EncoderDecoder(nn.Module):
             # generated_word = generated_word.unsqueeze(0)  # torch.Size([1, 1, 1])
 
             decoder_input_ids = torch.cat(
-                (decoder_input_ids, generated_word), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
+               (decoder_input_ids, generated_word), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
+
+            #decoder_input_ids = generated_word
 
         decoder_input_ids = decoder_input_ids.squeeze()
 
@@ -176,7 +180,7 @@ class EncoderDecoder(nn.Module):
             inputs, attention_masks)  # torch.Size([1, 41, 768]) TODO: maybe encode the classes here ???
 
         decoder_input_ids = torch.tensor(
-            [self.tokenizer.bos_token_id]).repeat(batch_size, 1)
+            [self.tokenizer.bos_token_id], device=self.device).repeat(batch_size, 1).to(device=self.device)
 
         for i in range(max_len):
             decoder_logits = self.decode(
@@ -192,6 +196,8 @@ class EncoderDecoder(nn.Module):
 
             decoder_input_ids = torch.cat(
                 (decoder_input_ids, generated_word), 1)
+
+            # decoder_input_ids = generated_word
 
         return decoder_input_ids
 

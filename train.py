@@ -51,8 +51,8 @@ class Trainer:
 
             loss += loss.item()
 
-            if step % 50 == 0:
-                print("Loss/val at step {} {}".format(step, loss.item()))
+            #if step % 50 == 0:
+            #    print("Loss/val at step {} {}".format(step, loss.item()))
 
         loss /= total_items
 
@@ -95,8 +95,8 @@ class Trainer:
 
                 output = output.view(-1, n_l)
                 targets2 = targets2.reshape(-1)
-
                 loss = loss_func(output, targets2)
+
                 loss.backward()
                 optimizer.step()
 

@@ -3,9 +3,9 @@ import torch
 
 class Evaluator:
     def precision_recall_f1(self, tp, fp, fn):
-        precision = tp / (tp + fp)
-        recall = tp / (tp + fn)
-        f1 = 2 * precision * recall / (precision + recall)
+        precision = tp / max(tp + fp, 1)
+        recall = tp / max(tp + fn, 1)
+        f1 = 2 * precision * recall / max(precision + recall, 1)
 
         return (precision, recall, f1)
 
@@ -38,7 +38,7 @@ class Evaluator:
                 inputs, attention_masks, 30)  # torch.Size([2, 4]) ## TODO: fix this max_len
 
             for i, (target, generated) in enumerate(zip(targets2, generated.tolist())):
-                print("i", i)
+                #print("i", i)
                 print("target", target)
                 print("generated", generated)
 
@@ -48,8 +48,8 @@ class Evaluator:
                 cur_seq_len = 23  # TODO: fix this inputs_len[i]
 
                 for index, j in enumerate(generated):
-                    print("index", index)
-                    print("j", j)
+                    #print("index", index)
+                    #print("j", j)
 
                     cur_pair.append(j)
 
@@ -60,8 +60,8 @@ class Evaluator:
                             pairs.append(tuple(cur_pair))
                         cur_pair = []
 
-                print("pairs", pairs)
-                print("invalid", invalid)
+                #print("pairs", pairs)
+                #print("invalid", invalid)
 
                 ts = set([tuple(t) for t in target.tolist()])  # target_span
                 ps = set(pairs)
