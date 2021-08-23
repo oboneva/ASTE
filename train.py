@@ -102,7 +102,7 @@ class Trainer:
 
                 train_loss += loss.item()
 
-                print("{0:.2f}".format(timer() - begin))
+                # print("{0:.2f}".format(timer() - begin))
 
                 if step % 10 == 0:
                     print("--------------- Step {} --------------- ".format(step))
