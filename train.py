@@ -1,5 +1,5 @@
 import torch
-from torch.nn.modules.loss import NLLLoss
+from torch.nn.modules.loss import CrossEntropyLoss, NLLLoss
 from torch.utils.data import DataLoader
 from torch.nn import Module, NLLLoss
 from torch.optim.adamw import AdamW
@@ -60,7 +60,7 @@ class Trainer:
 
     def train(self, model, device):
         loss_func = NLLLoss(ignore_index=1)
-        optimizer = AdamW(model.parameters())
+        optimizer = AdamW(model.parameters(), lr=0.00005)
 
         model.train()
         for epoch in range(self.epochs):
