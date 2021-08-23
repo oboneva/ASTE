@@ -69,10 +69,9 @@ class ABSADataset(Dataset):
             target2.append(
                 [aspect_s, aspect_e, opinion_s, opinion_e, polarity2])
 
-        target.append(2)
+        ## TODO: append eos token
         target = torch.tensor(target)
 
-        # target2.append(2)
         target2 = torch.tensor(target2)
 
         return (input_ids, attention_mask, target, target2)
