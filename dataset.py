@@ -50,31 +50,49 @@ class ABSADataset(Dataset):
         input_ids = encoding["input_ids"].squeeze()
         attention_mask = encoding["attention_mask"].squeeze()
 
-        target = []
-        target2 = []
+        seq_len = len(input_ids)
+        shift = 2 ## 0 is sos, 1 is pad
+
+        decoder_input_tokens = []
+        decoder_targets = []
 
         for i in range(len(row["aspects"])):
-            aspect_s = row["aspects"][i]["from"]
-            aspect_e = row["aspects"][i]["to"] - 1
+            aspect_s = row["aspects"][i]["from"] + shift
+            aspect_e = row["aspects"][i]["to"] - 1 + shift
 
-            opinion_s = row["opinions"][i]["from"]
-            opinion_e = row["opinions"][i]["to"] - 1
+            if len(row["aspects"][i]["term"]) == 1:
+                decoder_input_tokens.extend(row["aspects"][i]["term"])
+            decoder_input_tokens.extend(row["aspects"][i]["term"])
 
-            polarity = self.mapping2id[row["aspects"][i]["polarity"]]
-            asd = len(input_ids)
-            polarity2 = self.mapping2id[row["aspects"][i]
-                                        ["polarity"]] - self.cur_num_token + asd
+            opinion_s = row["opinions"][i]["from"] + shift
+            opinion_e = row["opinions"][i]["to"] - 1 + shift
 
-            target.extend([aspect_s, aspect_e, opinion_s, opinion_e, polarity])
-            target2.append(
-                [aspect_s, aspect_e, opinion_s, opinion_e, polarity2])
+            if len(row["opinions"][i]["term"]) == 1:
+                decoder_input_tokens.extend(row["opinions"][i]["term"])
+            decoder_input_tokens.extend(row["opinions"][i]["term"])
 
-        ## TODO: append eos token
-        target = torch.tensor(target)
+            
+            polarity_index = self.mapping2id[row["aspects"][i]
+                                        ["polarity"]] - self.cur_num_token + seq_len - 1 + shift
 
-        target2 = torch.tensor(target2)
 
-        return (input_ids, attention_mask, target, target2)
+
+            decoder_input_tokens.extend([self.mapping[row["aspects"][i]["polarity"]]])
+            decoder_targets.extend(
+                [aspect_s, aspect_e, opinion_s, opinion_e, polarity_index])
+
+
+        decoder_input_tokens_encoding = self.tokenizer(" ".join(decoder_input_tokens), return_tensors='pt')
+        decoder_input_tokens_ids = decoder_input_tokens_encoding["input_ids"].squeeze()
+        decoder_input_tokens_ids = decoder_input_tokens_ids[:-1] ## [0, ....., without eos token]
+
+        assert decoder_input_tokens_ids.size(0) == len(decoder_input_tokens) + 1
+
+        eos_index = seq_len - 1
+        decoder_targets.append(eos_index)
+        decoder_targets = torch.tensor(decoder_targets) ## [2, 3, 5, 5, 8, 6]
+
+        return (input_ids, attention_mask, decoder_input_tokens_ids, decoder_targets)
 
 
 def main():
