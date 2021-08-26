@@ -26,32 +26,35 @@ class Trainer:
 
         model.eval()
 
-        for step, (inputs_padded, inputs_len,
+        for step, (input_ids_bpe_padded, input_ids_bpe_len,
                    attention_masks_padded, attention_masks_len,
-                   targets_padded, targets_len,
-                   targets2_padded, targets2_len) in enumerate(dl):
+                   decoder_input_token_ids_padded, decoder_input_token_ids_len,
+                   decoder_targets_whole_padded, decoder_targets_whole_len,
+                   decoder_targets_bpe_padded, decoder_targets_bpe_len) in enumerate(dl):
 
-            inputs = inputs_padded.to(device)
+            input_ids_bpe = input_ids_bpe_padded.to(device)
             attention_masks = attention_masks_padded.to(device)
-            targets = targets_padded.to(device)
-            targets2 = targets2_padded.to(device)
+            decoder_input_token_ids = decoder_input_token_ids_padded.to(device)
+            decoder_targets_whole = decoder_targets_whole_padded.to(device)
+            decoder_targets_bpe = decoder_targets_bpe_padded.to(device)
 
-            batch_size, seq_len = inputs.shape
+            batch_size, seq_len = input_ids_bpe.shape
 
             total_items += batch_size
 
-            output = model(inputs, attention_masks, targets)
+            output = model(input_ids_bpe, attention_masks,
+                           decoder_input_token_ids)
 
-            n_l = seq_len + 3
+            n_l = seq_len - 1 + 3
 
             output = output.view(-1, n_l)
-            targets2 = targets2.reshape(-1)
+            targets2 = decoder_targets_bpe.reshape(-1)
 
             loss = loss_func(output, targets2)
 
             loss += loss.item()
 
-            #if step % 50 == 0:
+            # if step % 50 == 0:
             #    print("Loss/val at step {} {}".format(step, loss.item()))
 
         loss /= total_items
@@ -69,40 +72,44 @@ class Trainer:
             train_loss = 0
             total_items = 0
 
-            for step, (inputs_padded, inputs_len,
+            for step, (input_ids_bpe_padded, input_ids_bpe_len,
                        attention_masks_padded, attention_masks_len,
-                       targets_padded, targets_len,
-                       targets2_padded, targets2_len) in enumerate(self.train_dl):
-                begin = timer()
+                       decoder_input_token_ids_padded, decoder_input_token_ids_len,
+                       decoder_targets_whole_padded, decoder_targets_whole_len,
+                       decoder_targets_bpe_padded, decoder_targets_bpe_len) in enumerate(self.train_dl):
+                # begin = timer()
                 optimizer.zero_grad()
 
-                inputs = inputs_padded.to(device)
-                attention_masks = attention_masks_padded.to(device)
-                targets = targets_padded.to(device)
-                targets2 = targets2_padded.to(device)
+                input_ids_bpe = input_ids_bpe_padded.to(
+                    device)  # torch.Size([2, 26])
+                attention_masks = attention_masks_padded.to(
+                    device)  # torch.Size([2, 26])
+                decoder_input_token_ids = decoder_input_token_ids_padded.to(
+                    device)  # torch.Size([2, 16]) 1 + 3*5
+                decoder_targets_whole = decoder_targets_whole_padded.to(
+                    device)  # torch.Size([2, 16])
+                decoder_targets_bpe = decoder_targets_bpe_padded.to(
+                    device)  # torch.Size([2, 16])
 
-                batch_size, seq_len = inputs.shape
+                batch_size, seq_len = input_ids_bpe.shape  # 2, 26
 
                 total_items += batch_size
 
-                output = model(inputs, attention_masks, targets)
+                output = model(input_ids_bpe, attention_masks,
+                               decoder_input_token_ids)  # torch.Size([2, 16, 28])
 
-                # input = inputs[0, :]
-                # attention_mask = attention_masks[0, :]
-                # asd = model.generate_single(input, attention_mask, 3)
-
-                n_l = seq_len + 3
+                n_l = seq_len - 1 + 3
 
                 output = output.view(-1, n_l)
-                targets2 = targets2.reshape(-1)
-                loss = loss_func(output, targets2)
+                decoder_targets_bpe = decoder_targets_bpe.reshape(-1)
+                loss = loss_func(output, decoder_targets_bpe)
 
                 loss.backward()
                 optimizer.step()
 
                 train_loss += loss.item()
 
-                # print("{0:.2f}".format(timer() - begin))
+               # print("{0:.2f}".format(timer() - begin))
 
                 if step % 10 == 0:
                     print("--------------- Step {} --------------- ".format(step))

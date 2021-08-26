@@ -84,8 +84,7 @@ class ABSADataset(Dataset):
 
             decoder_targets_whole.extend([aspect_s + shift, aspect_e + shift])
 
-            decoder_targets_bpe.extend(
-                [aspect_s_bpe + shift, aspect_e_bpe + shift])
+            decoder_targets_bpe.extend([aspect_s_bpe, aspect_e_bpe])
 
             # append opinion start and end
 
@@ -103,8 +102,7 @@ class ABSADataset(Dataset):
             decoder_targets_whole.extend(
                 [opinion_s + shift, opinion_e + shift])
 
-            decoder_targets_bpe.extend(
-                [opinion_s_bpe + shift, opinion_e_bpe + shift])
+            decoder_targets_bpe.extend([opinion_s_bpe, opinion_e_bpe])
 
             # append polarity
 
@@ -114,7 +112,7 @@ class ABSADataset(Dataset):
                                                    ["polarity"]] - self.cur_num_token + seq_len + shift
 
             polarity_index_bpe = self.mapping2id[row["aspects"][i]
-                                                 ["polarity"]] - self.cur_num_token + bpe_seq_len + shift
+                                                 ["polarity"]] - self.cur_num_token + bpe_seq_len
 
             decoder_input_token_ids.append(polarity_token)
             decoder_targets_whole.append(polarity_index_whole)

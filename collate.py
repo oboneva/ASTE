@@ -7,24 +7,34 @@ class CollateText:
         self.batch_first = batch_first
 
     def __call__(self, batch):
-        (input_ids, attention_masks, targets, targets2) = zip(*batch)
+        (input_ids_bpe, attention_masks, decoder_input_token_ids,
+         decoder_targets_whole, decoder_targets_bpe) = zip(*batch)
 
-        inputs_len = torch.LongTensor(list(map(len, input_ids)))
-        inputs_padded = pad_sequence(
-            input_ids, batch_first=self.batch_first, padding_value=1)
+        input_ids_bpe_len = torch.LongTensor(list(map(len, input_ids_bpe)))
+        input_ids_bpe_padded = pad_sequence(
+            input_ids_bpe, batch_first=self.batch_first, padding_value=1)
 
         attention_masks_len = torch.LongTensor(list(map(len, attention_masks)))
         attention_masks_padded = pad_sequence(
             attention_masks, batch_first=self.batch_first, padding_value=0)  # 0 for tokens that are masked.
 
-        targets_len = torch.LongTensor(list(map(len, targets)))
-        targets_padded = pad_sequence(
-            targets, batch_first=self.batch_first, padding_value=1)
+        decoder_input_token_ids_len = torch.LongTensor(
+            list(map(len, decoder_input_token_ids)))
+        decoder_input_token_ids_padded = pad_sequence(
+            decoder_input_token_ids, batch_first=self.batch_first, padding_value=1)
 
-        # TODO: we may have problems here
-        targets2_len = torch.LongTensor(list(map(len, targets2)))
-        targets2_padded = pad_sequence(
-            targets2, batch_first=self.batch_first, padding_value=1)
+        decoder_targets_whole_len = torch.LongTensor(
+            list(map(len, decoder_targets_whole)))
+        decoder_targets_whole_padded = pad_sequence(
+            decoder_targets_whole, batch_first=self.batch_first, padding_value=1)
 
-        return (inputs_padded, inputs_len, attention_masks_padded, attention_masks_len,
-                targets_padded, targets_len, targets2_padded, targets2_len)
+        decoder_targets_bpe_len = torch.LongTensor(
+            list(map(len, decoder_targets_bpe)))
+        decoder_targets_bpe_padded = pad_sequence(
+            decoder_targets_bpe, batch_first=self.batch_first, padding_value=1)
+
+        return (input_ids_bpe_padded, input_ids_bpe_len,
+                attention_masks_padded, attention_masks_len,
+                decoder_input_token_ids_padded, decoder_input_token_ids_len,
+                decoder_targets_whole_padded, decoder_targets_whole_len,
+                decoder_targets_bpe_padded, decoder_targets_bpe_len)
