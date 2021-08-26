@@ -1,3 +1,4 @@
+from configs import trainer_configs
 import torch
 
 
@@ -20,51 +21,57 @@ class Evaluator:
         false_negative = 0
         invalid = 0
 
-        for step, (inputs_padded, inputs_len,
+        for step, (input_ids_bpe_padded, input_ids_bpe_len,
                    attention_masks_padded, attention_masks_len,
-                   targets_padded, targets_len,
-                   targets2_padded, targets2_len) in enumerate(dl):
+                   decoder_input_token_ids_padded, decoder_input_token_ids_len,
+                   decoder_targets_whole_padded, decoder_targets_whole_len,
+                   decoder_targets_bpe_padded, decoder_targets_bpe_len) in enumerate(dl):
 
-            inputs = inputs_padded.to(device)
+            input_ids_bpe = input_ids_bpe_padded.to(device)
             attention_masks = attention_masks_padded.to(device)
-            targets = targets_padded.to(device)
-            targets2 = targets2_padded.to(device)  # torch.Size([2, 6])
+            decoder_input_token_ids = decoder_input_token_ids_padded.to(device)
+            decoder_targets_whole = decoder_targets_whole_padded.to(device)
+            decoder_targets_bpe = decoder_targets_bpe_padded.to(device)
 
-            batch_size, seq_len = inputs.shape
+            batch_size, seq_len = input_ids_bpe.shape
 
             total_items += batch_size
 
-            generated = model.generate_batch(
-                inputs, attention_masks, 30)  # torch.Size([2, 4]) ## TODO: fix this max_len
+            for i in range(batch_size):
+                inputs_len = input_ids_bpe_len[i].item()
+                decoder_target_bpe_len = decoder_targets_bpe_len[i].item()
 
-            for i, (target, generated) in enumerate(zip(targets2, generated.tolist())):
-                #print("i", i)
-                print("target", target)
+                inputs = input_ids_bpe[i, :inputs_len]
+                attention_mask = attention_masks[i, :inputs_len]
+                decoder_target_bpe = decoder_targets_bpe[i,
+                                                         :decoder_target_bpe_len]
+
+                generated = model.generate_single(
+                    inputs, attention_mask, 50)
+
+                print("target", decoder_target_bpe)
                 print("generated", generated)
 
-                pairs = []
-                cur_pair = []
+                triplets = []
+                cur_generated_triplet = []
 
-                cur_seq_len = 23  # TODO: fix this inputs_len[i]
+                cur_seq_len = inputs_len - 1
+
+                decoder_target_bpe = decoder_target_bpe[:-1]
+                decoder_target_bpe = decoder_target_bpe.view(-1, 5)
 
                 for index, j in enumerate(generated):
-                    #print("index", index)
-                    #print("j", j)
-
-                    cur_pair.append(j)
+                    cur_generated_triplet.append(j)
 
                     if j >= cur_seq_len:
-                        if len(cur_pair) != 5 or cur_pair[0] > cur_pair[1] or cur_pair[2] > cur_pair[3]:
+                        if len(cur_generated_triplet) != 5 or cur_generated_triplet[0] > cur_generated_triplet[1] or cur_generated_triplet[2] > cur_generated_triplet[3]:
                             invalid += 1
                         else:
-                            pairs.append(tuple(cur_pair))
-                        cur_pair = []
+                            triplets.append(tuple(cur_generated_triplet))
+                        cur_generated_triplet = []
 
-                #print("pairs", pairs)
-                #print("invalid", invalid)
-
-                ts = set([tuple(t) for t in target.tolist()])  # target_span
-                ps = set(pairs)
+                ts = set([tuple(t) for t in decoder_target_bpe.tolist()])
+                ps = set(triplets)
                 for p in list(ps):
                     if p in ts:
                         ts.remove(p)

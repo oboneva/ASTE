@@ -68,7 +68,7 @@ class EncoderDecoder(nn.Module):
                 embed /= len(indexes)
                 model.decoder.embed_tokens.weight.data[index] = embed
 
-        self.class_tokens_ids = class_tokens_ids
+        self.class_tokens_ids = list(class_tokens_ids)
 
         self.tokenizer = tokenizer
 
@@ -96,14 +96,14 @@ class EncoderDecoder(nn.Module):
 
         # torch.Size([2, 41, 768])
         h_hat = self.encoder_mlp(encoded)
-        h_hat = h_hat[:, 1:, :] # drop the <sos> token
+        h_hat = h_hat[:, 1:, :]  # drop the <sos> token
         inputs_embed = self.encoder.embed_tokens(inputs)
-        inputs_embed = inputs_embed[:, 1:, :] # drop the <sos> token
+        inputs_embed = inputs_embed[:, 1:, :]  # drop the <sos> token
         h_weighted_sum = torch.mul(h_hat, self.a) + \
             torch.mul(inputs_embed, 1 - self.a)  # torch.Size([2, 41])
 
         class_tokens_embeds = self.decoder.embed_tokens(
-            torch.tensor(list(self.class_tokens_ids), device=self.device))
+            torch.tensor(self.class_tokens_ids, device=self.device))
 
         class_tokens_embeds = class_tokens_embeds.repeat(batch_size, 1, 1)
 
@@ -141,10 +141,14 @@ class EncoderDecoder(nn.Module):
         batch_size, seq_len = input.shape
 
         encoder_last_hidden_state = self.encode(
-            input, attention_mask)  # torch.Size([1, 41, 768]) TODO: maybe encode the classes here ???
+            input, attention_mask)
 
         decoder_input_ids = torch.tensor(
             [self.tokenizer.bos_token_id]).repeat(batch_size, 1)
+
+        generated_indicies = []
+
+        eos_index = seq_len - 1
 
         # TODO: should we have a max len ?? (a sentence may have lots of aspects and opinions)
         for i in range(max_len):
@@ -153,53 +157,31 @@ class EncoderDecoder(nn.Module):
 
             values, indicies = torch.topk(decoder_logits, 1, 2)
 
-            # convert index to word embedding index which will be added to the decoder_input_ids
+            # get only the index for thelast word
             last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
 
-            # torch.Size([1, 1])
-            generated_word = torch.gather(input, 1, last_word_indicies)
+            generated_index = last_word_indicies.item()
 
-            # generated_word = generated_word.unsqueeze(0)  # torch.Size([1, 1, 1])
+            generated_indicies.append(generated_index + 1)
 
-            decoder_input_ids = torch.cat(
-               (decoder_input_ids, generated_word), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
+            if generated_index + 1 == eos_index:
+                break
+            elif generated_index + 1 < eos_index:
+                # torch.Size([1, 1])
+                generated_word_embed_id = torch.gather(
+                    input, 1, last_word_indicies)
 
-            #decoder_input_ids = generated_word
+                decoder_input_ids = torch.cat(
+                    (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
+            else:  # get polarity embedding
+                generated_class_embed_id = self.class_tokens_ids[generated_index - eos_index - 1]
+                generated_class_embed_id = torch.tensor(
+                    [[generated_class_embed_id]])
 
-        decoder_input_ids = decoder_input_ids.squeeze()
+                decoder_input_ids = torch.cat(
+                    (decoder_input_ids, generated_class_embed_id), 1)
 
-        # '<s><s><s>I<s>I charge charge'
-        generated = self.tokenizer.decode(decoder_input_ids)
-
-        return generated
-
-    def generate_batch(self, inputs, attention_masks, max_len):
-        batch_size, seq_len = inputs.shape
-
-        encoder_last_hidden_state = self.encode(
-            inputs, attention_masks)  # torch.Size([1, 41, 768]) TODO: maybe encode the classes here ???
-
-        decoder_input_ids = torch.tensor(
-            [self.tokenizer.bos_token_id], device=self.device).repeat(batch_size, 1).to(device=self.device)
-
-        for i in range(max_len):
-            decoder_logits = self.decode(
-                inputs, encoder_last_hidden_state, decoder_input_ids)  # torch.Size([1, 1, 44])
-
-            values, indicies = torch.topk(decoder_logits, 1, 2)
-
-            # convert index to word embedding index which will be added to the decoder_input_ids
-            last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
-
-            # torch.Size([1, 1])
-            generated_word = torch.gather(inputs, 1, last_word_indicies)
-
-            decoder_input_ids = torch.cat(
-                (decoder_input_ids, generated_word), 1)
-
-            # decoder_input_ids = generated_word
-
-        return decoder_input_ids
+        return generated_indicies
 
 
 def test():
