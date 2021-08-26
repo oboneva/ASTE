@@ -2,6 +2,8 @@ import torch
 from torch.utils.data import Dataset
 import json
 from transformers import BartTokenizer
+import functools
+import operator
 
 # [0, 2, 3, 1, 50264]
 # ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
@@ -46,56 +48,99 @@ class ABSADataset(Dataset):
     def __getitem__(self, index):  # -> input, target
         row = self.data[index]
 
-        encoding = self.tokenizer(row["raw_words"], return_tensors='pt')
-        input_ids = encoding["input_ids"].squeeze()
-        attention_mask = encoding["attention_mask"].squeeze()
+        input_ids_bpe = [[self.tokenizer.bos_token_id]]
+        for word in row["words"]:
+            bpe_tokens = self.tokenizer.tokenize(word, add_prefix_space=True)
+            bpes = self.tokenizer.convert_tokens_to_ids(bpe_tokens)
 
-        seq_len = len(input_ids)
-        shift = 2 ## 0 is sos, 1 is pad
+            input_ids_bpe.append(bpes)
+        input_ids_bpe.append([self.tokenizer.eos_token_id])
 
-        decoder_input_tokens = []
-        decoder_targets = []
+        # row[words] does not have bos and eos tokens
+        seq_len = len(row["words"]) + 2
+        bpe_lens = list(map(len, input_ids_bpe))
+        bpe_sum_lens = torch.cumsum(torch.tensor(bpe_lens), dim=0)
+        bpe_seq_len = bpe_sum_lens[-1].item()
+
+        # seq_len = len(input_ids)
+        shift = 2  # 0 is sos, 1 is pad
+
+        decoder_input_token_ids = [self.tokenizer.bos_token_id]
+        decoder_targets_whole = []
+        decoder_targets_bpe = []
 
         for i in range(len(row["aspects"])):
-            aspect_s = row["aspects"][i]["from"] + shift
-            aspect_e = row["aspects"][i]["to"] - 1 + shift
+            # append aspect start and end
+            aspect_s = row["aspects"][i]["from"] + 1
+            aspect_s_bpe = bpe_sum_lens[aspect_s - 1].item()
 
-            if len(row["aspects"][i]["term"]) == 1:
-                decoder_input_tokens.extend(row["aspects"][i]["term"])
-            decoder_input_tokens.extend(row["aspects"][i]["term"])
+            aspect_e = row["aspects"][i]["to"]
+            aspect_e_bpe = bpe_sum_lens[aspect_e].item() - 1
 
-            opinion_s = row["opinions"][i]["from"] + shift
-            opinion_e = row["opinions"][i]["to"] - 1 + shift
+            aspect_s_decoder_input_token_bpe = input_ids_bpe[aspect_s][0]
+            aspect_e_decoder_input_token_bpe = input_ids_bpe[aspect_e][-1]
+            decoder_input_token_ids.extend(
+                [aspect_s_decoder_input_token_bpe, aspect_e_decoder_input_token_bpe])
 
-            if len(row["opinions"][i]["term"]) == 1:
-                decoder_input_tokens.extend(row["opinions"][i]["term"])
-            decoder_input_tokens.extend(row["opinions"][i]["term"])
+            decoder_targets_whole.extend([aspect_s + shift, aspect_e + shift])
 
-            
-            polarity_index = self.mapping2id[row["aspects"][i]
-                                        ["polarity"]] - self.cur_num_token + seq_len - 1 + shift
+            decoder_targets_bpe.extend(
+                [aspect_s_bpe + shift, aspect_e_bpe + shift])
 
+            # append opinion start and end
 
+            opinion_s = row["opinions"][i]["from"] + 1
+            opinion_s_bpe = bpe_sum_lens[opinion_s - 1].item()
 
-            decoder_input_tokens.extend([self.mapping[row["aspects"][i]["polarity"]]])
-            decoder_targets.extend(
-                [aspect_s, aspect_e, opinion_s, opinion_e, polarity_index])
+            opinion_e = row["opinions"][i]["to"]
+            opinion_e_bpe = bpe_sum_lens[opinion_e].item() - 1
 
+            opinion_s_decoder_input_token_bpe = input_ids_bpe[opinion_s][0]
+            opinion_e_decoder_input_token_bpe = input_ids_bpe[opinion_e][-1]
+            decoder_input_token_ids.extend(
+                [opinion_s_decoder_input_token_bpe, opinion_e_decoder_input_token_bpe])
 
-        decoder_input_tokens_encoding = self.tokenizer(" ".join(decoder_input_tokens), return_tensors='pt')
-        decoder_input_tokens_ids = decoder_input_tokens_encoding["input_ids"].squeeze()
-        decoder_input_tokens_ids = decoder_input_tokens_ids[:-1] ## [0, ....., without eos token]
+            decoder_targets_whole.extend(
+                [opinion_s + shift, opinion_e + shift])
 
-        assert decoder_input_tokens_ids.size(0) == len(decoder_input_tokens) + 1
+            decoder_targets_bpe.extend(
+                [opinion_s_bpe + shift, opinion_e_bpe + shift])
 
-        eos_index = seq_len - 1
-        decoder_targets.append(eos_index)
-        decoder_targets = torch.tensor(decoder_targets) ## [2, 3, 5, 5, 8, 6]
+            # append polarity
 
-        return (input_ids, attention_mask, decoder_input_tokens_ids, decoder_targets)
+            polarity_token = self.mapping2id[row["aspects"][i]["polarity"]]
+
+            polarity_index_whole = self.mapping2id[row["aspects"][i]
+                                                   ["polarity"]] - self.cur_num_token + seq_len + shift
+
+            polarity_index_bpe = self.mapping2id[row["aspects"][i]
+                                                 ["polarity"]] - self.cur_num_token + bpe_seq_len + shift
+
+            decoder_input_token_ids.append(polarity_token)
+            decoder_targets_whole.append(polarity_index_whole)
+            decoder_targets_bpe.append(polarity_index_bpe)
+
+        asd = functools.reduce(operator.iconcat, input_ids_bpe, [])
+        input_ids_bpe = torch.tensor(asd)
+        attention_mask = torch.ones(input_ids_bpe.size(0))
+        decoder_input_token_ids = torch.tensor(decoder_input_token_ids)
+
+        eos_index_whole = seq_len - 1
+        decoder_targets_whole.append(eos_index_whole)
+        decoder_targets_whole = torch.tensor(decoder_targets_whole)
+
+        eos_index_bpe = bpe_seq_len - 1
+        decoder_targets_bpe.append(eos_index_bpe)
+        decoder_targets_bpe = torch.tensor(decoder_targets_bpe)
+
+        return (input_ids_bpe, attention_mask, decoder_input_token_ids, decoder_targets_whole, decoder_targets_bpe)
 
 
 def main():
+    # dataset = ABSADataset(
+    #     path="{}/train_convert.json".format(data_configs.data_dir))
+    # a = dataset.__getitem__(2)
+
     pass
 
 
