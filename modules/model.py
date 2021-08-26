@@ -1,3 +1,4 @@
+from json import decoder, encoder
 import torch
 from transformers import BartModel, BartTokenizer
 from torch import nn
@@ -37,10 +38,7 @@ class EncoderDecoder(nn.Module):
             len(tokenizer.unique_no_split_tokens)+num_tokens)
 
         self.encoder = model.encoder
-
         self.decoder = model.decoder
-
-        self.pad_token_id = tokenizer.pad_token_id
 
         hidden_size = self.decoder.embed_tokens.weight.size(1)
         self.encoder_mlp = nn.Sequential(nn.Linear(hidden_size, hidden_size),
@@ -98,7 +96,9 @@ class EncoderDecoder(nn.Module):
 
         # torch.Size([2, 41, 768])
         h_hat = self.encoder_mlp(encoded)
+        h_hat = h_hat[:, 1:, :] # drop the <sos> token
         inputs_embed = self.encoder.embed_tokens(inputs)
+        inputs_embed = inputs_embed[:, 1:, :] # drop the <sos> token
         h_weighted_sum = torch.mul(h_hat, self.a) + \
             torch.mul(inputs_embed, 1 - self.a)  # torch.Size([2, 41])
 
