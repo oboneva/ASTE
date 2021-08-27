@@ -1,4 +1,3 @@
-from json import decoder, encoder
 import torch
 from transformers import BartModel, BartTokenizer
 from torch import nn
@@ -42,11 +41,11 @@ class EncoderDecoder(nn.Module):
 
         hidden_size = self.decoder.embed_tokens.weight.size(1)
         self.encoder_mlp = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                         nn.Dropout(0.3),
+                                         nn.Dropout(0.7),
                                          nn.ReLU(),
                                          nn.Linear(hidden_size, hidden_size))
 
-        self.a = 0.5
+        self.a = 0.7
 
         # add embedings for the special tokens based on their pretrainede emebdings
         _tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
@@ -72,7 +71,7 @@ class EncoderDecoder(nn.Module):
 
         self.tokenizer = tokenizer
 
-        self.softmax = nn.LogSoftmax(dim=2)
+        self.softmax = nn.Softmax(dim=2)
 
         self.device = device
 
@@ -144,7 +143,7 @@ class EncoderDecoder(nn.Module):
             input, attention_mask)
 
         decoder_input_ids = torch.tensor(
-            [self.tokenizer.bos_token_id]).repeat(batch_size, 1)
+            [self.tokenizer.bos_token_id], device=self.device).repeat(batch_size, 1)
 
         generated_indicies = []
 
@@ -172,14 +171,18 @@ class EncoderDecoder(nn.Module):
                     input, 1, last_word_indicies)
 
                 decoder_input_ids = torch.cat(
-                    (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
+                     (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
+                #decoder_input_ids = generated_word_embed_id
             else:  # get polarity embedding
                 generated_class_embed_id = self.class_tokens_ids[generated_index - eos_index - 1]
                 generated_class_embed_id = torch.tensor(
-                    [[generated_class_embed_id]])
+                    [[generated_class_embed_id]], device=self.device)
 
                 decoder_input_ids = torch.cat(
                     (decoder_input_ids, generated_class_embed_id), 1)
+
+                #decoder_input_ids = generated_class_embed_id
+
 
         return generated_indicies
 

@@ -47,7 +47,7 @@ class Evaluator:
                                                          :decoder_target_bpe_len]
 
                 generated = model.generate_single(
-                    inputs, attention_mask, 50)
+                    inputs, attention_mask, 25)
 
                 print("target", decoder_target_bpe)
                 print("generated", generated)
