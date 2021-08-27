@@ -147,7 +147,7 @@ class EncoderDecoder(nn.Module):
 
         generated_indicies = []
 
-        eos_index = seq_len - 1
+        eos_index = seq_len - 2
 
         # TODO: should we have a max len ?? (a sentence may have lots of aspects and opinions)
         for i in range(max_len):
@@ -168,7 +168,7 @@ class EncoderDecoder(nn.Module):
             elif generated_index < eos_index:
                 # torch.Size([1, 1])
                 generated_word_embed_id = torch.gather(
-                    input, 1, last_word_indicies)
+                    input[:, 1:], 1, last_word_indicies)
 
                 decoder_input_ids = torch.cat(
                     (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment

@@ -1,3 +1,4 @@
+from configs import data_configs
 import torch
 from torch.utils.data import Dataset
 import json
@@ -95,7 +96,7 @@ class ABSADataset(Dataset):
             opinion_e_bpe = bpe_sum_lens[opinion_e].item() - 1
 
             opinion_s_decoder_input_token_bpe = input_ids_bpe[opinion_s][0]
-            opinion_e_decoder_input_token_bpe = input_ids_bpe[opinion_e][-1]
+            opinion_e_decoder_input_token_bpe = input_ids_bpe[opinion_e][0]
             decoder_input_token_ids.extend(
                 [opinion_s_decoder_input_token_bpe, opinion_e_decoder_input_token_bpe])
 
@@ -112,11 +113,11 @@ class ABSADataset(Dataset):
                                                    ["polarity"]] - self.cur_num_token + seq_len + shift
 
             polarity_index_bpe = self.mapping2id[row["aspects"][i]
-                                                 ["polarity"]] - self.cur_num_token + bpe_seq_len
+                                                 ["polarity"]] - self.cur_num_token + bpe_seq_len - 1
 
             decoder_input_token_ids.append(polarity_token)
             decoder_targets_whole.append(polarity_index_whole)
-            decoder_targets_bpe.append(polarity_index_bpe - 1)
+            decoder_targets_bpe.append(polarity_index_bpe)
 
         asd = functools.reduce(operator.iconcat, input_ids_bpe, [])
         input_ids_bpe = torch.tensor(asd)
@@ -127,7 +128,7 @@ class ABSADataset(Dataset):
         decoder_targets_whole.append(eos_index_whole)
         decoder_targets_whole = torch.tensor(decoder_targets_whole)
 
-        eos_index_bpe = bpe_seq_len - 1 - 1
+        eos_index_bpe = bpe_seq_len - 2
         decoder_targets_bpe.append(eos_index_bpe)
         decoder_targets_bpe = torch.tensor(decoder_targets_bpe)
 
