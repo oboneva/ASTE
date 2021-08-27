@@ -84,7 +84,7 @@ class ABSADataset(Dataset):
 
             decoder_targets_whole.extend([aspect_s + shift, aspect_e + shift])
 
-            decoder_targets_bpe.extend([aspect_s_bpe, aspect_e_bpe])
+            decoder_targets_bpe.extend([aspect_s_bpe - 1, aspect_e_bpe - 1])
 
             # append opinion start and end
 
@@ -102,7 +102,7 @@ class ABSADataset(Dataset):
             decoder_targets_whole.extend(
                 [opinion_s + shift, opinion_e + shift])
 
-            decoder_targets_bpe.extend([opinion_s_bpe, opinion_e_bpe])
+            decoder_targets_bpe.extend([opinion_s_bpe - 1, opinion_e_bpe - 1])
 
             # append polarity
 
@@ -116,7 +116,7 @@ class ABSADataset(Dataset):
 
             decoder_input_token_ids.append(polarity_token)
             decoder_targets_whole.append(polarity_index_whole)
-            decoder_targets_bpe.append(polarity_index_bpe)
+            decoder_targets_bpe.append(polarity_index_bpe - 1)
 
         asd = functools.reduce(operator.iconcat, input_ids_bpe, [])
         input_ids_bpe = torch.tensor(asd)
@@ -127,7 +127,7 @@ class ABSADataset(Dataset):
         decoder_targets_whole.append(eos_index_whole)
         decoder_targets_whole = torch.tensor(decoder_targets_whole)
 
-        eos_index_bpe = bpe_seq_len - 1
+        eos_index_bpe = bpe_seq_len - 1 - 1
         decoder_targets_bpe.append(eos_index_bpe)
         decoder_targets_bpe = torch.tensor(decoder_targets_bpe)
 
