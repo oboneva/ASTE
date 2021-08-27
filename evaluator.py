@@ -55,7 +55,7 @@ class Evaluator:
                 triplets = []
                 cur_generated_triplet = []
 
-                cur_seq_len = inputs_len - 1
+                eos_token_index = inputs_len - 2
 
                 decoder_target_bpe = decoder_target_bpe[:-1]
                 decoder_target_bpe = decoder_target_bpe.view(-1, 5)
@@ -63,7 +63,7 @@ class Evaluator:
                 for index, j in enumerate(generated):
                     cur_generated_triplet.append(j)
 
-                    if j >= cur_seq_len:
+                    if j >= eos_token_index:
                         if len(cur_generated_triplet) != 5 or cur_generated_triplet[0] > cur_generated_triplet[1] or cur_generated_triplet[2] > cur_generated_triplet[3]:
                             invalid += 1
                         else:
