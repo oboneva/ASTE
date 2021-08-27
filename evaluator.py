@@ -20,6 +20,7 @@ class Evaluator:
         false_positive = 0
         false_negative = 0
         invalid = 0
+        valid = 0
 
         for step, (input_ids_bpe_padded, input_ids_bpe_len,
                    attention_masks_padded, attention_masks_len,
@@ -63,11 +64,12 @@ class Evaluator:
                 for index, j in enumerate(generated):
                     cur_generated_triplet.append(j)
 
-                    if j >= eos_token_index:
+                    if j > eos_token_index:
                         if len(cur_generated_triplet) != 5 or cur_generated_triplet[0] > cur_generated_triplet[1] or cur_generated_triplet[2] > cur_generated_triplet[3]:
                             invalid += 1
                         else:
                             triplets.append(tuple(cur_generated_triplet))
+                            valid += 1
                         cur_generated_triplet = []
 
                 ts = set([tuple(t) for t in decoder_target_bpe.tolist()])
@@ -82,6 +84,7 @@ class Evaluator:
                 false_negative += len(ts)
 
         print("invalid", invalid)
+        print("valid", valid)
 
         precision, recall, f1 = self.precision_recall_f1(
             true_positive, false_positive, false_negative)
