@@ -154,31 +154,43 @@ class EncoderDecoder(nn.Module):
             decoder_logits = self.decode(
                 input, encoder_last_hidden_state, decoder_input_ids)  # torch.Size([1, 1, 44])
 
-            values, indicies = torch.topk(decoder_logits, 1, 2)
+            if (i + 1) % 5 == 0:
+                # should generate polarity class
+                values, indicies = torch.topk(
+                    decoder_logits[:, :, eos_index + 1:], 1, 2)
 
-            # get only the index for thelast word
-            last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
+                # get only the index for thelast word
+                last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
 
-            generated_index = last_word_indicies.item()
+                generated_index = last_word_indicies.item()
 
-            generated_indicies.append(generated_index)
+                generated_indicies.append(eos_index + 1 + generated_index)
 
-            if generated_index == eos_index:
-                break
-            elif generated_index < eos_index:
-                # torch.Size([1, 1])
-                generated_word_embed_id = torch.gather(
-                    input[:, 1:], 1, last_word_indicies)
-
-                decoder_input_ids = torch.cat(
-                    (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
-            else:  # get polarity embedding
-                generated_class_embed_id = self.class_tokens_ids[generated_index - eos_index - 1]
+                generated_class_embed_id = self.class_tokens_ids[generated_index]
                 generated_class_embed_id = torch.tensor(
                     [[generated_class_embed_id]], device=self.device)
-
                 decoder_input_ids = torch.cat(
                     (decoder_input_ids, generated_class_embed_id), 1)
+            else:
+                values, indicies = torch.topk(
+                    decoder_logits[:, :, :eos_index + 1], 1, 2)
+
+                # get only the index for thelast word
+                last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
+
+                generated_index = last_word_indicies.item()
+
+                generated_indicies.append(generated_index)
+
+                if generated_index == eos_index:
+                    break
+                elif generated_index < eos_index:
+                    # torch.Size([1, 1])
+                    generated_word_embed_id = torch.gather(
+                        input[:, 1:], 1, last_word_indicies)
+
+                    decoder_input_ids = torch.cat(
+                        (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
 
         return generated_indicies
 
@@ -193,7 +205,10 @@ def test():
 
 
 def main():
-    pass
+    eos_index = 4
+    a = torch.tensor([[[1, 2, 3, 4, 5, 6, 7]]])
+    print(a[:, :, eos_index:])
+    print(a[:, :, :eos_index])
 
 
 if __name__ == "__main__":
