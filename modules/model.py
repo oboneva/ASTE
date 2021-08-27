@@ -171,6 +171,23 @@ class EncoderDecoder(nn.Module):
                     [[generated_class_embed_id]], device=self.device)
                 decoder_input_ids = torch.cat(
                     (decoder_input_ids, generated_class_embed_id), 1)
+            elif (i + 2) % 5 == 0 or (i + 4) % 5 == 0:
+                last_generated = generated_indicies[-1]
+
+                values, indicies = torch.topk(
+                    decoder_logits[:, :, last_generated:eos_index], 1, 2)
+
+                last_word_indicies = indicies[:, -1, :]  # torch.Size([1, 1])
+
+                generated_index = last_word_indicies.item()
+
+                generated_indicies.append(last_generated + generated_index)
+
+                generated_word_embed_id = torch.gather(
+                    input[:, 1:], 1, last_word_indicies)
+
+                decoder_input_ids = torch.cat(
+                    (decoder_input_ids, generated_word_embed_id), 1)
             else:
                 values, indicies = torch.topk(
                     decoder_logits[:, :, :eos_index + 1], 1, 2)
