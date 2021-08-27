@@ -171,8 +171,7 @@ class EncoderDecoder(nn.Module):
                     input, 1, last_word_indicies)
 
                 decoder_input_ids = torch.cat(
-                     (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
-                #decoder_input_ids = generated_word_embed_id
+                    (decoder_input_ids, generated_word_embed_id), 1)  # torch.Size([1, 1, 2]) TODO: should we generate based on everything previously generated or only the last "word" this may be an experiment
             else:  # get polarity embedding
                 generated_class_embed_id = self.class_tokens_ids[generated_index - eos_index - 1]
                 generated_class_embed_id = torch.tensor(
@@ -180,9 +179,6 @@ class EncoderDecoder(nn.Module):
 
                 decoder_input_ids = torch.cat(
                     (decoder_input_ids, generated_class_embed_id), 1)
-
-                #decoder_input_ids = generated_class_embed_id
-
 
         return generated_indicies
 
