@@ -1,3 +1,4 @@
+from configs import model_configs
 import torch
 from transformers import BartModel, BartTokenizer
 from torch import nn
@@ -41,11 +42,11 @@ class EncoderDecoder(nn.Module):
 
         hidden_size = self.decoder.embed_tokens.weight.size(1)
         self.encoder_mlp = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                         nn.Dropout(0.7),
+                                         nn.Dropout(model_configs.dropout),
                                          nn.ReLU(),
                                          nn.Linear(hidden_size, hidden_size))
 
-        self.a = 0.7
+        self.a = model_configs.a
 
         # add embedings for the special tokens based on their pretrainede emebdings
         _tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')

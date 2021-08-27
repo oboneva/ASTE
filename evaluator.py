@@ -1,4 +1,4 @@
-from configs import trainer_configs
+from configs import model_configs
 import torch
 
 
@@ -48,7 +48,7 @@ class Evaluator:
                                                          :decoder_target_bpe_len]
 
                 generated = model.generate_single(
-                    inputs, attention_mask, 16)
+                    inputs, attention_mask, model_configs.max_len)
 
                 print("target", decoder_target_bpe)
                 print("generated", generated)

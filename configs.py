@@ -9,3 +9,8 @@ class data_configs:
 class trainer_configs:
     epochs = 500
     patience = 15
+
+class model_configs:
+    max_len = 21
+    a = 0.7
+    dropout = 0.7

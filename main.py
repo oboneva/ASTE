@@ -1,6 +1,6 @@
 from evaluator import Evaluator
 from collate import CollateText
-from configs import trainer_configs, data_configs
+from configs import model_configs, trainer_configs, data_configs
 from train import Trainer
 from modules.model import EncoderDecoder
 from dataset import ABSADataset
@@ -13,12 +13,17 @@ from torch.utils.tensorboard import SummaryWriter
 # [0, 2, 3, 1, 50264]
 # ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
 
+def model_metadata():
+    return "T_BS_{}A_{}DROP_OUT_{}MAX_LEN_{}".format(data_configs.train_batch_size,
+                                                model_configs.a,
+                                                model_configs.dropout,
+                                                model_configs.max_len)
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using {} device".format(device))
 
-    writer = SummaryWriter()
+    writer = SummaryWriter(comment=model_metadata())
 
     cudnn.benchmark = True
 
