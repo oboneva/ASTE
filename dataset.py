@@ -78,7 +78,7 @@ class ABSADataset(Dataset):
             aspect_e_bpe = bpe_sum_lens[aspect_e].item() - 1
 
             aspect_s_decoder_input_token_bpe = input_ids_bpe[aspect_s][0]
-            aspect_e_decoder_input_token_bpe = input_ids_bpe[aspect_e][-1]
+            aspect_e_decoder_input_token_bpe = input_ids_bpe[aspect_e][0]
             decoder_input_token_ids.extend(
                 [aspect_s_decoder_input_token_bpe, aspect_e_decoder_input_token_bpe])
 

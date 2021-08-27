@@ -47,7 +47,7 @@ class Evaluator:
                                                          :decoder_target_bpe_len]
 
                 generated = model.generate_single(
-                    inputs, attention_mask, 25)
+                    inputs, attention_mask, 16)
 
                 print("target", decoder_target_bpe)
                 print("generated", generated)
@@ -89,6 +89,10 @@ class Evaluator:
         writer.add_scalar("Test/Precision", precision)
         writer.add_scalar("Test/Recall", recall)
         writer.add_scalar("Test/F1-score", f1)
+
+        print("true positive", true_positive)
+        print("false positive", false_positive)
+        print("false negative", false_negative)
 
         return (precision, recall, f1)
 

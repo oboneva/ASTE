@@ -101,7 +101,7 @@ class EncoderDecoder(nn.Module):
         h_weighted_sum = torch.mul(h_hat, self.a) + \
             torch.mul(inputs_embed, 1 - self.a)  # torch.Size([2, 41])
 
-        class_tokens_embeds = self.decoder.embed_tokens(
+        class_tokens_embeds = self.encoder.embed_tokens(
             torch.tensor(self.class_tokens_ids, device=self.device))
 
         class_tokens_embeds = class_tokens_embeds.repeat(batch_size, 1, 1)
@@ -161,11 +161,11 @@ class EncoderDecoder(nn.Module):
 
             generated_index = last_word_indicies.item()
 
-            generated_indicies.append(generated_index + 1)
+            generated_indicies.append(generated_index)
 
-            if generated_index + 1 == eos_index:
+            if generated_index == eos_index:
                 break
-            elif generated_index + 1 < eos_index:
+            elif generated_index < eos_index:
                 # torch.Size([1, 1])
                 generated_word_embed_id = torch.gather(
                     input, 1, last_word_indicies)

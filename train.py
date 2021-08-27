@@ -2,7 +2,7 @@ import torch
 from torch.nn.modules.loss import CrossEntropyLoss, NLLLoss
 from torch.utils.data import DataLoader
 from torch.nn import Module, NLLLoss
-from torch.optim.adam import Adam
+from torch.optim.adamw import AdamW
 from timeit import default_timer as timer
 
 
@@ -63,7 +63,7 @@ class Trainer:
 
     def train(self, model, device):
         loss_func = CrossEntropyLoss()
-        optimizer = Adam(model.parameters(), lr=0.000008)
+        optimizer = AdamW(model.parameters(), lr=0.00001)
 
         model.train()
         for epoch in range(self.epochs):
@@ -105,6 +105,8 @@ class Trainer:
                 loss = loss_func(output, decoder_targets_bpe)
 
                 loss.backward()
+
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 5)
                 optimizer.step()
 
                 train_loss += loss.item()
