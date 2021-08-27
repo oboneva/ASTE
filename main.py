@@ -34,9 +34,9 @@ def main():
     train_dl = DataLoader(train, shuffle=True, batch_size=data_configs.train_batch_size,
                           collate_fn=collate_fn, drop_last=True, num_workers=data_configs.num_workers)
     test_dl = DataLoader(
-        test, shuffle=False, batch_size=data_configs.test_batch_size, collate_fn=collate_fn, drop_last=True, num_workers=data_configs.num_workers)
+        test, shuffle=False, batch_size=data_configs.test_batch_size, collate_fn=collate_fn, drop_last=False, num_workers=data_configs.num_workers)
     val_dl = DataLoader(
-        val, shuffle=False, batch_size=data_configs.val_batch_size, collate_fn=collate_fn, drop_last=True, num_workers=data_configs.num_workers)
+        val, shuffle=False, batch_size=data_configs.val_batch_size, collate_fn=collate_fn, drop_last=False, num_workers=data_configs.num_workers)
 
     class_tokens = train.mapping2id.values()
 

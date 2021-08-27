@@ -54,9 +54,6 @@ class Trainer:
 
             loss += loss.item()
 
-            # if step % 50 == 0:
-            #    print("Loss/val at step {} {}".format(step, loss.item()))
-
         loss /= total_items
 
         return loss
@@ -143,6 +140,7 @@ class Trainer:
                 self.no_improvement_epochs = 0
 
                 print("New minimal validation loss", val_loss)
+                print("Train loss", train_loss)
 
                 path = "./checkpoints/model_best_state_dict.pt"
 
