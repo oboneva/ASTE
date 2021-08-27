@@ -51,6 +51,13 @@ def main():
 
     # 4. Evaluate the Model.
 
+    model = EncoderDecoder(
+        device=device, tokenizer=train.tokenizer, class_tokens_ids=class_tokens)
+
+    path = "./checkpoints/model_best_state_dict.pt"
+    model.load_state_dict(torch.load(path))
+    model.eval()
+
     precision, recall, f1 = Evaluator().eval(model, test_dl, device, writer)
 
     print("precision", precision)
