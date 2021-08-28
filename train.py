@@ -1,9 +1,11 @@
+from configs import trainer_configs
 import torch
 from torch.nn.modules.loss import CrossEntropyLoss, NLLLoss
 from torch.utils.data import DataLoader
 from torch.nn import Module, NLLLoss
 from torch.optim.adamw import AdamW
 from timeit import default_timer as timer
+from torch import nn, optim
 
 
 class Trainer:
@@ -60,7 +62,25 @@ class Trainer:
 
     def train(self, model, device):
         loss_func = CrossEntropyLoss()
-        optimizer = AdamW(model.parameters(), lr=0.00001)
+        optimizer = AdamW(model.parameters(), lr=trainer_configs.lr)
+
+        # def lambda_rule(epoch):
+        #     lr_l = 1.0 - epoch / self.epochs
+        #     return lr_l
+        
+        # scheduler = optim.lr_scheduler.LambdaLR(
+        #     optimizer=optimizer, lr_lambda=lambda_rule
+        # )
+
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.4)
+
+        # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 40, 60, 80], gamma=0.8)
+
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.8)
+
+        # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5, 10, 15], gamma=0.6)
+
+        # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[5, 10, 15], gamma=0.9)
 
         model.train()
         for epoch in range(self.epochs):
@@ -115,6 +135,10 @@ class Trainer:
 
                 if step % 50 == 0:
                     print("Loss/train at step {} {}".format(step, loss.item()))
+            
+            # scheduler.step()
+
+            # print("scheduler.get_last_lr() ", scheduler.get_last_lr())
 
             train_loss /= total_items
 

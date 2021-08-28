@@ -14,10 +14,11 @@ from torch.utils.tensorboard import SummaryWriter
 # ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
 
 def model_metadata():
-    return "T_BS_{}A_{}DROP_OUT_{}MAX_LEN_{}".format(data_configs.train_batch_size,
+    return "T_BS_{}A_{}DROP_OUT_{}MAX_LEN_{}LR_{}".format(data_configs.train_batch_size,
                                                 model_configs.a,
                                                 model_configs.dropout,
-                                                model_configs.max_len)
+                                                model_configs.max_len,
+                                                trainer_configs.lr)
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -55,9 +56,6 @@ def main():
     trainer.train(model=model, device=device)
 
     # 4. Evaluate the Model.
-
-    model = EncoderDecoder(
-        device=device, tokenizer=train.tokenizer, class_tokens_ids=class_tokens)
 
     path = "./checkpoints/model_best_state_dict.pt"
     model.load_state_dict(torch.load(path))
