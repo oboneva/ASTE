@@ -12,6 +12,7 @@ class trainer_configs:
     lr = 0.00005
 
 class model_configs:
+    pretrained_name = 'facebook/bart-base'
     max_len = 21
     a = 0.7
     dropout = 0.3

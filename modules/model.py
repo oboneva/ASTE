@@ -1,6 +1,6 @@
 from configs import model_configs
 import torch
-from transformers import BartModel, BartTokenizer
+from transformers import BartModel, BartTokenizer, AutoModel, AutoTokenizer
 from torch import nn
 
 # BartEncoder(
@@ -31,7 +31,7 @@ class EncoderDecoder(nn.Module):
     def __init__(self, device, tokenizer, class_tokens_ids):
         super(EncoderDecoder, self).__init__()
 
-        model = BartModel.from_pretrained('facebook/bart-base')
+        model = AutoModel.from_pretrained(model_configs.pretrained_name)
 
         num_tokens, _ = model.encoder.embed_tokens.weight.shape
         model.resize_token_embeddings(
@@ -49,7 +49,7 @@ class EncoderDecoder(nn.Module):
         self.a = model_configs.a
 
         # add embedings for the special tokens based on their pretrainede emebdings
-        _tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+        _tokenizer = AutoTokenizer.from_pretrained(model_configs.pretrained_name)
         for token in tokenizer.unique_no_split_tokens:
             if token[:2] == '<<':
                 index = tokenizer.convert_tokens_to_ids(  # [50266]

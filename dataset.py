@@ -1,8 +1,8 @@
-from configs import data_configs
+from configs import data_configs, model_configs
 import torch
 from torch.utils.data import Dataset
 import json
-from transformers import BartTokenizer
+from transformers import BartTokenizer, AutoTokenizer
 import functools
 import operator
 
@@ -15,7 +15,7 @@ class ABSADataset(Dataset):
         with open(path) as json_file:
             self.data = json.load(json_file)
 
-        self.tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+        self.tokenizer = AutoTokenizer.from_pretrained(model_configs.pretrained_name)
 
         cur_num_tokens = self.tokenizer.vocab_size
         self.cur_num_token = cur_num_tokens

@@ -14,11 +14,12 @@ from torch.utils.tensorboard import SummaryWriter
 # ['<s>', '</s>', '<unk>', '<pad>', '<mask>']
 
 def model_metadata():
-    return "T_BS_{}A_{}DROP_OUT_{}MAX_LEN_{}LR_{}".format(data_configs.train_batch_size,
+    return "T_BS_{}A_{}DROP_OUT_{}MAX_LEN_{}LR_{}M_{}".format(data_configs.train_batch_size,
                                                 model_configs.a,
                                                 model_configs.dropout,
                                                 model_configs.max_len,
-                                                trainer_configs.lr)
+                                                trainer_configs.lr,
+                                                model_configs.pretrained_name)
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
